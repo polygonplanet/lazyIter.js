@@ -29,6 +29,7 @@ $(function() {
     initLang();
     toggleLang($('.lang-toggle'), true);
     toggleLazyIterSpeed($('[name="loop-by"]:checked'));
+    $('#run').removeAttr('disabled');
 
     $('[name="loop-by"]').click(function() {
       toggleLazyIterSpeed($(this));
