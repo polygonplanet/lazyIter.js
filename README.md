@@ -7,6 +7,9 @@ These iterators are the minimum version of Pot.js's iterators.
 Pot.js : http://polygonplanet.github.com/Pot.js/
 
 
+**lazyIter CPU usage tester**: http://polygonplanet.github.com/lazyIter.js/lazyiter.js-cpu-usage-tester.html
+
+
 **lazyIter Test fiddle**: http://jsfiddle.net/polygonplanet/JLT2r/
 
 
