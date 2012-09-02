@@ -23,6 +23,11 @@ Pot.js : http://polygonplanet.github.com/Pot.js/
     }, function() {
       console.log('End loop');
     });
+    // result:
+    //   '0:a'
+    //   '1:b'
+    //   '2:c'
+    //   'End loop'
 
     // Object.
     lazyIter.forEach({a: 1, b: 2, c: 3}, function(val, key) {
@@ -30,6 +35,11 @@ Pot.js : http://polygonplanet.github.com/Pot.js/
     }, function() {
       console.log('End loop');
     });
+    // result:
+    //   'a:1'
+    //   'b:2'
+    //   'c:3'
+    //   'End loop'
 
 ------
     // repeat:
@@ -42,6 +52,12 @@ Pot.js : http://polygonplanet.github.com/Pot.js/
     }, function() {
       console.log('End loop');
     });
+    // result:
+    //   0
+    //   1
+    //   ...
+    //   9
+    //   'End loop'
 
     // Specify first, step and end number like for statement.
     lazyIter.repeat({begin: 0, step: 5, end: 30}, function(i) {
@@ -49,6 +65,14 @@ Pot.js : http://polygonplanet.github.com/Pot.js/
     }, function() {
       console.log('End loop');
     });
+    // result:
+    //   0
+    //   5
+    //   10
+    //   15
+    //   20
+    //   25
+    //   'End loop'
 
 ------
     // forEver:
@@ -64,6 +88,13 @@ Pot.js : http://polygonplanet.github.com/Pot.js/
     }, function() {
       console.log('End loop');
     });
+    // result:
+    //   0
+    //   1
+    //   ...
+    //   9
+    //   'End loop'
+
 
 You can stop each iterations by "**throw lazyIter.StopIteration;**".  
 An argument "***context***" will be used as "***this***" in callback function.  
@@ -76,5 +107,4 @@ You can specify iteration "***speed***" by following types:
   - '**slow**'   : slowly
   - '**doze**'   : more slowly
   - '**limp**'   : most slowly
-
 
