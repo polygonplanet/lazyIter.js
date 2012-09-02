@@ -63,7 +63,7 @@
  *
  * You can stop each iterations by "throw lazyIter.StopIteration;".
  * An argument "context" will be used as "this" in callback function.
- * You can specify iteration speed by following types:
+ * You can specify iteration "speed" by following types:
  *   - 'ninja'  : fastest
  *   - 'rapid'  : faster
  *   - 'fast'   : fast
@@ -71,6 +71,8 @@
  *   - 'slow'   : slowly
  *   - 'doze'   : more slowly
  *   - 'limp'   : most slowly
+ *
+ * Test fiddle: http://jsfiddle.net/polygonplanet/JLT2r/
  */
 ;(function(lazyIter, globals) {
   'use strict';
