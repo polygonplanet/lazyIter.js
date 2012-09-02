@@ -21,6 +21,11 @@
  *   }, function() {
  *     console.log('End loop');
  *   });
+ *   // result:
+ *   //   '0:a'
+ *   //   '1:b'
+ *   //   '2:c'
+ *   //   'End loop'
  *
  *   // Object.
  *   lazyIter.forEach({a: 1, b: 2, c: 3}, function(val, key) {
@@ -28,6 +33,11 @@
  *   }, function() {
  *     console.log('End loop');
  *   });
+ *   // result:
+ *   //   'a:1'
+ *   //   'b:2'
+ *   //   'c:3'
+ *   //   'End loop'
  *   -------------------------------------------------------------------------
  *   // repeat:
  *   //
@@ -39,6 +49,12 @@
  *   }, function() {
  *     console.log('End loop');
  *   });
+ *   // result:
+ *   //   0
+ *   //   1
+ *   //   ...
+ *   //   9
+ *   //   'End loop'
  *
  *   // Specify first, step and end number like for statement.
  *   lazyIter.repeat({begin: 0, step: 5, end: 30}, function(i) {
@@ -46,6 +62,14 @@
  *   }, function() {
  *     console.log('End loop');
  *   });
+ *   // result:
+ *   //   0
+ *   //   5
+ *   //   10
+ *   //   15
+ *   //   20
+ *   //   25
+ *   //   'End loop'
  *   -------------------------------------------------------------------------
  *   // forEver:
  *   //
@@ -60,6 +84,12 @@
  *   }, function() {
  *     console.log('End loop');
  *   });
+ *   // result:
+ *   //   0
+ *   //   1
+ *   //   ...
+ *   //   9
+ *   //   'End loop'
  *
  * You can stop each iterations by "throw lazyIter.StopIteration;".
  * An argument "context" will be used as "this" in callback function.
