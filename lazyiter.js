@@ -4,7 +4,7 @@
  * These iterators are the minimum version of Pot.js's iterators.
  * Pot.js : http://polygonplanet.github.com/Pot.js/
  *
- * Version 1.00, 2012-09-02
+ * Version 1.01, 2012-09-04
  * Copyright (c) 2012 polygon planet <polygon.planet.aqua@gmail.com>
  * Dual licensed under the MIT or GPL v2 licenses.
  */
@@ -137,6 +137,16 @@
            (typeof n === 'object' && n.constructor !== Number)) ?
             false : !isNaN(n - 0);
   },
+  isNodeJS = function() {
+    if (typeof process !== 'undefined' && process && process.version &&
+        typeof require === 'function' &&
+        (typeof exports === 'object' ||
+        (typeof module === 'object' && typeof module.exports === 'object'))
+    ) {
+      return true;
+    }
+    return false;
+  }(),
 
   lazyIter = {
     stop : {},
@@ -193,7 +203,7 @@
         }
       }
 
-      setTimeout(function revback() {
+      callLazy.flush(function revback() {
         var cutback, done, delay = 0;
 
         time.loop = +new Date();
@@ -247,7 +257,11 @@
               )
             );
           }
-          setTimeout(revback, delay);
+          if (delay) {
+            setTimeout(revback, delay);
+          } else {
+            callLazy.flush(revback);
+          }
         }
       }, 0);
     },
@@ -341,6 +355,69 @@
           }
         }
       };
+    }
+  },
+
+  callLazy = {
+    flush : function(callback) {
+      (this.byEvent || this.byTick || this.byTimer)(callback);
+    },
+    byEvent : function() {
+      var IMAGE;
+
+      if (isNodeJS ||
+          typeof window !== 'object'  || typeof document !== 'object' ||
+          typeof Image !== 'function' || window.opera ||
+          typeof document.addEventListener !== 'function'
+      ) {
+        return false;
+      }
+
+      try {
+        if (typeof new Image().addEventListener !== 'function') {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+
+      // Dummy 1x1 gif image.
+      IMAGE = 'data:image/gif;base64,' +
+              'R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+
+      return function(callback) {
+        var done, handler, img = new Image();
+
+        handler = function() {
+          try {
+            img.removeEventListener('load', handler, false);
+            img.removeEventListener('error', handler, false);
+          } catch (e) {}
+          if (!done) {
+            done = true;
+            callback();
+          }
+        };
+        img.addEventListener('load', handler, false);
+        img.addEventListener('error', handler, false);
+        try {
+          img.src = IMAGE;
+        } catch (e) {
+          this.byEvent = this.byTimer;
+        }
+      };
+    }(),
+    byTick : function() {
+      if (!isNodeJS || typeof process !== 'object' ||
+          typeof process.nextTick !== 'function') {
+        return false;
+      }
+      return function(callback) {
+        process.nextTick(callback);
+      };
+    }(),
+    byTimer : function(callback, msec) {
+      return setTimeout(callback, msec || 0);
     }
   };
 
