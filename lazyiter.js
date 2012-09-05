@@ -4,7 +4,7 @@
  * These iterators are the minimum version of Pot.js's iterators.
  * Pot.js : http://polygonplanet.github.com/Pot.js/
  *
- * Version 1.01, 2012-09-04
+ * Version 1.02, 2012-09-06
  * Copyright (c) 2012 polygon planet <polygon.planet.aqua@gmail.com>
  * Dual licensed under the MIT or GPL v2 licenses.
  */
@@ -127,6 +127,7 @@
 
   var
   toString = Object.prototype.toString,
+  hasOwn = Object.prototype.hasOwnProperty,
   isArray = function(o) {
     return (o && o.isArray) || toString.call(o) === '[object Array]';
   },
@@ -146,6 +147,46 @@
       return true;
     }
     return false;
+  }(),
+  // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/keys
+  getKeys = function() {
+    var hasDontEnumBug = !({toString : null})
+                       .propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+
+    return function(object) {
+      var results = [], type = typeof object, p, i;
+
+      if (type === 'object' || type === 'function') {
+        if (Object.keys) {
+          return Object.keys(object);
+        }
+
+        for (p in object) {
+          if (hasOwn.call(object, p)) {
+            results[results.length] = p;
+          }
+        }
+
+        if (hasDontEnumBug) {
+          for (i = 0; i < dontEnumsLength; i++) {
+            if (hasOwn.call(object, dontEnums[i])) {
+              results[results.length] = dontEnums[i];
+            }
+          }
+        }
+      }
+      return results;
+    };
   }(),
 
   lazyIter = {
@@ -186,13 +227,11 @@
       var that = this, end, interval = this.interval,
           time = {
             start : +new Date(),
-            total : null,
             loop  : null,
             diff  : null,
             risk  : null,
             axis  : null,
-            rest  : 100,
-            limit : 255
+            rest  : 100
           };
 
       if (speed != null) {
@@ -245,7 +284,7 @@
         } while (!cutback);
 
         if (end) {
-          callback();
+          callback && callback();
         } else {
           if (Math.random() * 10 < Math.max(2, (time.axis || 2) / 2.75)) {
             delay += Math.min(
@@ -263,10 +302,10 @@
             callLazy.flush(revback);
           }
         }
-      }, 0);
+      });
     },
     forEach : function(object, callback, context) {
-      var that = this, i = 0, len, p, keys = [];
+      var that = this, i = 0, len, keys;
 
       if (isArray(object)) {
         return {
@@ -285,10 +324,7 @@
           }
         };
       } else {
-        for (p in object) {
-          keys[keys.length] = p;
-        }
-        len = keys.length;
+        keys = getKeys(object);
 
         return {
           next : function() {
