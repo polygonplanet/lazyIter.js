@@ -4,7 +4,7 @@
  * These iterators are the minimum version of Pot.js's iterators.
  * Pot.js : http://polygonplanet.github.com/Pot.js/
  *
- * Version 1.02, 2012-09-06
+ * Version 1.03, 2012-09-06
  * Copyright (c) 2012 polygon planet <polygon.planet.aqua@gmail.com>
  * Dual licensed under the MIT or GPL v2 licenses.
  */
@@ -101,6 +101,65 @@
  *   - 'slow'   : slowly
  *   - 'doze'   : more slowly
  *   - 'limp'   : most slowly
+ *
+ * Speed example:
+ *
+ *   lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+ *     console.log(i + ':' + val);
+ *   }, function() {
+ *     console.log('End loop');
+ *   }, 'slow');
+ *   // result:
+ *   //   '0:a'
+ *   //   '1:b'
+ *   //   '2:c'
+ *   //   'End loop'
+ *
+ *   //
+ *   // or
+ *   //
+ *   // lazyIter.[method].[speed](object, func, callback [, context])
+ *   //
+ *
+ *   lazyIter.forEach.slow(['a', 'b', 'c'], function(val, i) {
+ *     console.log(i + ':' + val);
+ *   }, function() {
+ *     console.log('End loop');
+ *   });
+ *   // result:
+ *   //   '0:a'
+ *   //   '1:b'
+ *   //   '2:c'
+ *   //   'End loop'
+ *
+ *   lazyIter.repeat.fast(10, function(i) {
+ *     console.log(i);
+ *   }, function() {
+ *     console.log('End loop');
+ *   });
+ *   // result:
+ *   //   0
+ *   //   1
+ *   //   ...
+ *   //   9
+ *   //   'End loop'
+ *
+ *   var end = 10;
+ *   lazyIter.forEver.ninja(function(i) {
+ *     if (i === end) {
+ *       throw lazyIter.StopIteration;
+ *     }
+ *     console.log(i);
+ *   }, function() {
+ *     console.log('End loop');
+ *   });
+ *   // result:
+ *   //   0
+ *   //   1
+ *   //   ...
+ *   //   9
+ *   //   'End loop'
+ *
  *
  * Test fiddle: http://jsfiddle.net/polygonplanet/JLT2r/
  */
@@ -325,6 +384,7 @@
         };
       } else {
         keys = getKeys(object);
+        len = keys.length;
 
         return {
           next : function() {
@@ -394,6 +454,28 @@
     }
   },
 
+  addSpeeds = function(type) {
+    var key;
+
+    for (key in lazyLoop.speeds) {
+      void function(speed) {
+        var method;
+
+        if (type === 'forEver') {
+          method = function(func, callback, context) {
+            return lazyIter[type](func, callback, speed, context);
+          };
+        } else {
+          method = function(val, func, callback, context) {
+            return lazyIter[type](val, func, callback, speed, context);
+          };
+        }
+        lazyIter[type][speed] = method;
+      }(key);
+    }
+    return addSpeeds;
+  },
+
   callLazy = {
     flush : function(callback) {
       (this.byEvent || this.byTick || this.byTimer)(callback);
@@ -460,6 +542,8 @@
   lazyIter.StopIteration = lazyIter.stop;
   lazyIter.speeds = lazyLoop.speeds;
   lazyIter.delays = lazyLoop.delays;
+
+  addSpeeds('forEach')('repeat')('forEver');
 
   return lazyIter;
 
