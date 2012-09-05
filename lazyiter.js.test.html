@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>lazyIter.js - JavaScript Async Iterator Library</title>
+<script>
+if (window.ActiveXObject) {
+  window.onerror = function(msg, uri, line) {
+    alert([
+      'Error!',
+      'message: ' + msg,
+      'URI: ' + uri,
+      'line: ' + line
+    ].join('\n'));
+  };
+}
+</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="lazyiter.js"></script>
+<script>
+var TestRun = {
+  index : 0,
+  results : {
+    success : [],
+    failure : []
+  },
+  exec : function() {
+    try {
+      TestRun.Units[TestRun.index].code(TestRun.append);
+    } catch (e) {
+      TestRun.index++;
+      TestRun.results.failure.push(TestRun.index);
+      TestRun.emit();
+    }
+  },
+  emit : function() {
+    setTimeout(function() {
+      TestRun.exec();
+    }, 20);
+  },
+  append : function(result) {
+    var unit = TestRun.Units[TestRun.index],
+        elem = $('<div/>')
+          .addClass('test-unit')
+          .append(
+            $('<div/>')
+              .addClass('test-unit-title')
+              .text(unit.title)
+          )
+          .append(
+            $('<pre/>')
+              .addClass('test-unit-code')
+              .text(unit.code.toString())
+          )
+          .append(
+            $('<div/>')
+              .addClass('test-unit-expect')
+              .text(TestRun.dump(unit.expect))
+          ),
+        res = TestRun.equals(unit.expect, result);
+    if (res) {
+      TestRun.results.success.push(TestRun.index);
+    } else {
+      TestRun.results.failure.push(TestRun.index);
+    }
+    elem
+      .append(
+        $('<div/>')
+          .addClass('test-unit-actual')
+          .addClass('test-unit-' + (res ? 'success' : 'failure'))
+          .text(res)
+      )
+      .appendTo('#result');
+    $('<hr/>').appendTo('#result');
+    TestRun.index++;
+    if (TestRun.index < TestRun.Units.length) {
+      TestRun.emit();
+    } else {
+      $('<h2/>')
+        .addClass('test-unit-result-end')
+        .text('End')
+        .appendTo('#result');
+      $('<h3/>')
+        .addClass('test-unit-result-length')
+        .text('Total: ' + TestRun.Units.length)
+        .appendTo('#result');
+      $('<h3/>')
+        .addClass('test-unit-result-success')
+        .text('Success: ' + TestRun.results.success.length)
+        .appendTo('#result');
+      $('<h3/>')
+        .addClass('test-unit-result-failure')
+        .text('Failure: ' + TestRun.results.failure.length)
+        .appendTo('#result');
+    }
+  },
+  isEmpty : function(o) {
+    for (var p in o) {
+      return false;
+    }
+    return true;
+  },
+  isArray : function(a) {
+    return Object.prototype.toString.call(a) === '[object Array]';
+  },
+  typeOf : function(o) {
+    var type;
+    if (o === null) {
+      return 'null';
+    }
+    if (TestRun.isArray(o)) {
+      return 'array';
+    }
+    type = Object.prototype.toString.call(o).match(/\[\w+\s+(\w+)\]/) ||
+           typeof o;
+    if (type && type[1] && type[1].toLowerCase) {
+      type = type[1].toLowerCase();
+    }
+    return type;
+  },
+  equals : function(o, x) {
+    var result = false;
+    if (o == null) {
+      return (o === x);
+    }
+    switch (TestRun.typeOf(o)) {
+      case 'array':
+          if (x && TestRun.isArray(x)) {
+            if (TestRun.isEmpty(o) && TestRun.isEmpty(x)) {
+              result = true;
+            } else if (o.length === 0 && x.length === 0) {
+              result = true;
+            } else {
+              result = false;
+              $.each(o, function(i, v) {
+                if (!(i in x) || !TestRun.equals(v, x[i])) {
+                  result = false;
+                  return false;
+                } else {
+                  result = true;
+                }
+              });
+            }
+          }
+          break;
+      case 'object':
+          if (x && TestRun.typeOf(x) === 'object') {
+            if (TestRun.isEmpty(o) && TestRun.isEmpty(x)) {
+              result = true;
+            } else {
+              result = false;
+              $.each(o, function(k, v) {
+                if (!(k in x) || !TestRun.equals(v, x[k])) {
+                  result = false;
+                  return false;
+                } else {
+                  result = true;
+                }
+              });
+            }
+          }
+          break;
+      case 'string':
+          if (TestRun.typeOf(x) === 'string' && o.toString() === x.toString()) {
+            result = true;
+          }
+          break;
+      case 'number':
+          if (TestRun.typeOf(x) === 'number') {
+            if (isNaN(x) && isNaN(o)) {
+              result = true;
+            } else if (!isFinite(x) && !isFinite(o)) {
+              result = true;
+            } else if (Math.abs(o - x) <= 0.000001) {
+              result = true;
+            } else {
+              result = (o === x);
+            }
+          }
+          break;
+      case 'function':
+          if (TestRun.typeOf(x) === 'function' &&
+              o.toString() === x.toString() &&
+              o.constructor === x.constructor && o.length == x.length) {
+            result = true;
+          }
+          break;
+      case 'boolean':
+          if (TestRun.typeOf(x) === 'boolean' && (o != false) == (x != false)) {
+            result = true;
+          }
+          break;
+      case 'date':
+          if (TestRun.typeOf(x) === 'date' && o.getTime() === x.getTime()) {
+            result = true;
+          }
+          break;
+      case 'error':
+          if (TestRun.typeOf(x) === 'error' &&
+              (('message' in o && o.message == x.message) ||
+               ('description' in o && o.description == x.description))) {
+            result = true;
+          }
+          break;
+      case 'regexp':
+          if (TestRun.typeOf(x) === 'regexp' && o.toString() === x.toString()) {
+            result = true;
+          }
+          break;
+      default:
+          if (TestRun.typeOf(o) === TestRun.typeOf(x) && o === x) {
+            result = true;
+          }
+          break;
+    }
+    return result;
+  },
+  dump : function(o) {
+    var r,
+        me = TestRun.dump,
+        repr = function(x) {
+          return (x == null) ? String(x) :
+                 x.toString ? x.toString() : String(x);
+        };
+    if (o == null) {
+      return String(o);
+    }
+    if (typeof uneval === 'function') {
+      return uneval(o);
+    } else if (typeof o.toSource === 'function') {
+      return o.toSource();
+    }
+    switch (TestRun.typeOf(o)) {
+      case 'array':
+          return '[' + $.map(o, function(v) {
+            return me(v);
+          }).join(', ') + ']';
+      case 'object':
+          r = [];
+          $.each(o, function(k, v) {
+            r[r.length] = k + ': ' + me(v);
+          });
+          return '{' + r.join(', ') + '}';
+      case 'string':
+          return '"' + repr(o) + '"';
+      case 'function':
+          return '(' + repr(o) + ')';
+      default:
+          return repr(o);
+    }
+  },
+  Units : [{
+    title : 'lazyIter.forEach() with Array',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach() with Object',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach({a: 1, b: 2, c: 3}, function(val, key) {
+        r.push(key + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['a:1', 'b:2', 'c:3']
+  }, {
+    title : 'lazyIter.repeat() with Number',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.repeat(10, function(i) {
+        r.push(i);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  }, {
+    title : 'lazyIter.repeat() with Object',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.repeat({begin: 0, step: 5, end: 30}, function(i) {
+        r.push(i);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : [0, 5, 10, 15, 20, 25]
+  }, {
+    title : 'lazyIter.forEver()',
+    code  : function(callback) {
+      var r = [], end = 10;
+      lazyIter.forEver(function(i) {
+        if (i === end) {
+          throw lazyIter.StopIteration;
+        }
+        r.push(i);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  }, {
+    title : 'lazyIter.forEach() and StopIteration',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c', 'd', 'e', 'f'], function(v, i) {
+        if (i >= 3) {
+          throw lazyIter.StopIteration;
+        }
+        r.push(v);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['a', 'b', 'c']
+  }, {
+    title : 'lazyIter.repeat() and StopIteration',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.repeat(100, function(i) {
+        if (i >= 3) {
+          throw lazyIter.StopIteration;
+        }
+        r.push(i);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : [0, 1, 2]
+  }, {
+    title : 'lazyIter.forEach.ninja()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.ninja(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.rapid()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.rapid(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.fast()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.fast(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.normal()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.normal(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.slow()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.slow(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.doze()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.doze(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach.limp()',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach.limp(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      });
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(ninja)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'ninja');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(rapid)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'rapid');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(fast)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'fast');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(normal)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'normal');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(slow)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'slow');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(doze)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'doze');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(limp)',
+    code  : function(callback) {
+      var r = [];
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(i + ':' + val);
+      }, function() {
+        callback(r);
+      }, 'limp');
+    },
+    expect : ['0:a', '1:b', '2:c']
+  }, {
+    title : 'lazyIter.forEach(Array) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.forEach(['a', 'b', 'c'], function(val, i) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, null, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.forEach(Object) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.forEach({a: 1, b: 2, c: 3}, function(val, key) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, null, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.repeat(Number) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.repeat(3, function(i) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, null, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.repeat(Object) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.repeat({begin: 0, end: 3, step: 1}, function(i) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, null, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.forEver() with context',
+    code  : function(callback) {
+      var r = [], end = 3, context = {hoge : 'hoge'};
+      lazyIter.forEver(function(i) {
+        if (i >= 3) {
+          throw lazyIter.StopIteration;
+        }
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, null, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.forEach.slow(Array) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.forEach.slow(['a', 'b', 'c'], function(val, i) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.repeat.fast(Object) with context',
+    code  : function(callback) {
+      var r = [], context = {hoge : 'hoge'};
+      lazyIter.repeat.fast({begin: 0, end: 3, step: 1}, function(i) {
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }, {
+    title : 'lazyIter.forEver.ninja() with context',
+    code  : function(callback) {
+      var r = [], end = 3, context = {hoge : 'hoge'};
+      lazyIter.forEver.ninja(function(i) {
+        if (i >= 3) {
+          throw lazyIter.StopIteration;
+        }
+        r.push(this.hoge);
+      }, function() {
+        callback(r);
+      }, context);
+    },
+    expect : ['hoge', 'hoge', 'hoge']
+  }]
+};
+
+$(function() {
+  TestRun.exec();
+});
+</script>
+<style>
+* {
+  font-family: verdana, sans-serif;
+}
+
+body {
+  color: #555;
+  background: #f8f8ff;
+}
+
+.test-unit {
+  padding: 1em;
+  margin: 1em;
+}
+
+.test-unit-title {
+  font-weight: bold;
+}
+
+.test-unit-code {
+  margin: 1em;
+  padding: 1em;
+  color: #333;
+  background: #f2f2fc;
+  border: 1px solid #7575c1;
+  white-space: pre;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -o-pre-wrap;
+  white-space: -pre-wrap;
+  *white-space: pre;
+  word-wrap: break-word;
+}
+
+.test-unit-expect {
+  color: #117733;
+  background: #e2f8e8;
+  padding: 0.5em;
+}
+
+.test-unit-actual {
+  margin-top: 1em;
+  padding: 0.5em;
+  background: #e2e2f8;
+}
+
+.test-unit-success {
+  color: #3544d1;
+}
+
+.test-unit-failure {
+  color: #c94754;
+}
+
+hr {
+  border: 1px solid #ccc;
+}
+
+.test-unit-result-end {
+  font-size: 130%;
+  font-weight: bold;
+  color: #333;
+}
+
+.test-unit-result-length {
+  font-size: 110%;
+  font-weight: bold;
+}
+
+.test-unit-result-success {
+  color: #3544d1;
+  font-size: 120%;
+  font-weight: bold;
+}
+
+.test-unit-result-failure {
+  color: #c94754;
+  font-size: 120%;
+  font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+ <h1>lazyIter.js - JavaScript Async Iterator Library</h1>
+ <h2>Test Run</h2>
+ <div id="result"></div>
+</body>
+</html>
