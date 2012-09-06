@@ -153,6 +153,8 @@ You can specify iteration "***speed***" by following types:
     //   '2:c'
     //   'End loop'
 
+------
+
     lazyIter.repeat.fast(10, function(i) {
       console.log(i);
     }, function() {
@@ -170,6 +172,8 @@ You can specify iteration "***speed***" by following types:
     //   8
     //   9
     //   'End loop'
+
+------
 
     var end = 10;
     lazyIter.forEver.ninja(function(i) {
