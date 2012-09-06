@@ -4,7 +4,7 @@
  * These iterators are the minimum version of Pot.js's iterators.
  * Pot.js : http://polygonplanet.github.com/Pot.js/
  *
- * Version 1.03, 2012-09-06
+ * Version 1.04, 2012-09-06
  * Copyright (c) 2012 polygon planet <polygon.planet.aqua@gmail.com>
  * Dual licensed under the MIT or GPL v2 licenses.
  */
@@ -314,6 +314,10 @@
               end = true;
               break;
             }
+            if (callback) {
+              callback(e || new Error(e));
+              return;
+            }
             throw e;
           }
 
@@ -458,7 +462,7 @@
     var key;
 
     for (key in lazyLoop.speeds) {
-      void function(speed) {
+      (function(speed) {
         var method;
 
         if (type === 'forEver') {
@@ -471,7 +475,7 @@
           };
         }
         lazyIter[type][speed] = method;
-      }(key);
+      }(key));
     }
     return addSpeeds;
   },
