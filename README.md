@@ -236,3 +236,38 @@ You can specify iteration "***speed***" by following types:
 
 jQuery plugin example: http://jsfiddle.net/polygonplanet/xsrvb/
 
+------
+
+## Example for using lazyIter.js with JSDeferred.
+
+    // Execute lazy forEach loops.
+    //
+    // @param {Array|Object} target
+    // @param {Function} callback
+    // @param {(String)} speed
+    // @return {Deferred} an instance of Deferred (JSDeferred).
+    //
+    function lazyForEach(target, callback, speed) {
+      var d = new Deferred();
+      lazyIter.forEach(target, callback, function(err) {
+        if (err) {
+          d.fail(err);
+        } else {
+          d.call();
+        }
+      }, speed);
+      return d;
+    }
+    
+    // example loop.
+    lazyForEach(array, function(val, i) {
+      console.log(val);
+    }, 'slow'/* Optional */).next(function() {
+      console.log('[END]');
+    }).error(function(err) {
+      console.log(err);
+    })
+    // You can continue Deferred chain.
+    .next( ... )
+
+
