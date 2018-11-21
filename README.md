@@ -1,3 +1,7 @@
+# This repository is no longer maintained
+## To reduce JavaScript CPU usage by asynchronous iteration, use [chillout.js](https://github.com/polygonplanet/chillout) instead.
+
+
 lazyIter.js
 ===========
 
